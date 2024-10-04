@@ -1,5 +1,4 @@
 #define LILYGO_T5_V213
-
 #include <boards.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -9,16 +8,45 @@
 #include <Fonts/FreeSans9pt7b.h>
 #include "config.h" // Environment variables
 
-// Wi-Fi credentials
+// Constants
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
-
-// YR.no API endpoint
 const char* yrApiUrl = "https://www.yr.no/api/v0/locations/1-211102/forecast/now";
+const int BUTTON_PIN = 39; // LilyGo T5 integrated button pin
 
+// Global variables
+float precipitationData[18]; // Array to store 90 minutes of precipitation data (5-minute intervals)
+
+// Display initialization
 GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT> display(GxEPD2_213_BN(EPD_CS, EPD_DC, EPD_RSET, EPD_BUSY));
 
-float precipitationData[18]; // Array to store 90 minutes of precipitation data (5-minute intervals)
+// Function definitions follow...
+
+void updateDisplayWithNewData() {
+    Serial.println("Updating data...");
+    if (fetchPrecipitationData()) {
+        Serial.println("Data updated successfully");
+        display.setFullWindow();
+        display.firstPage();
+        do {
+            drawGraph(6, 5, 235, 114, precipitationData, 18, "Nedbor neste 90 minutt");
+        } while (display.nextPage());
+    } else {
+        Serial.println("Failed to update data");
+    }
+}
+
+void checkButtonAndUpdate() {
+    if (digitalRead(BUTTON_PIN) == LOW) {  // Button is active LOW
+        delay(50);  // Simple debounce
+        if (digitalRead(BUTTON_PIN) == LOW) {
+            updateDisplayWithNewData();
+            while (digitalRead(BUTTON_PIN) == LOW) {
+                delay(10);  // Wait for button release
+            }
+        }
+    }
+}
 
 void setupWiFi() {
     display.setFullWindow();
@@ -174,11 +202,12 @@ void setup() {
         Serial.println("Failed to fetch data");
     }
 
-    display.setFullWindow();
-    display.firstPage();
-    do {
-        drawGraph(6, 5, 235, 114, precipitationData, 18, "Nedbor neste 90 minutt");
-    } while (display.nextPage());
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+    updateDisplayWithNewData();  // Initial data fetch and display
 }
 
-void loop() {};
+void loop() {
+    checkButtonAndUpdate();
+    delay(100);  // Small delay to prevent excessive checking
+}
