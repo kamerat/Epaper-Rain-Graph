@@ -1,4 +1,4 @@
-# Lilygo-T5-Precipitation-yr.no
+# Lilygo-T5 Precipitation graph using YR.NO API
 
 Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This project displays a precipitation forecast for the next 90 minutes using data from YR.no.
 
