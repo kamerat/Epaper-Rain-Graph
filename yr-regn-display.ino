@@ -12,7 +12,7 @@
 // Constants
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
-const char* yrApiUrl = "https://www.yr.no/api/v0/locations/1-211102/forecast/now";
+const char* yrApiUrl = "https://www.yr.no/api/v0/locations/" YR_LOCATION "/forecast/now";
 const int BUTTON_PIN = 39; // LilyGo T5 integrated button pin
 const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
 
