@@ -7,20 +7,25 @@
 #include <Fonts/FreeMonoBold9pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include "config.h" // Environment variables
+#include <esp_sleep.h>
 
 // Constants
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 const char* yrApiUrl = "https://www.yr.no/api/v0/locations/1-211102/forecast/now";
 const int BUTTON_PIN = 39; // LilyGo T5 integrated button pin
+const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
 
 // Global variables
 float precipitationData[18]; // Array to store 90 minutes of precipitation data (5-minute intervals)
+String timeStr; // String to store the time from last YR update
+
+// Deep sleep variables
+RTC_DATA_ATTR bool firstBoot = true;
 
 // Display initialization
 GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT> display(GxEPD2_213_BN(EPD_CS, EPD_DC, EPD_RSET, EPD_BUSY));
 
-// Function definitions follow...
 
 void updateDisplayWithNewData() {
     Serial.println("Updating data...");
@@ -29,7 +34,7 @@ void updateDisplayWithNewData() {
         display.setFullWindow();
         display.firstPage();
         do {
-            drawGraph(6, 5, 235, 114, precipitationData, 18, "Nedbor neste 90 minutt");
+            drawGraph(6, 5, 235, 114, precipitationData, 18, "Nedbor neste 90 minutt", timeStr);
         } while (display.nextPage());
     } else {
         Serial.println("Failed to update data");
@@ -49,14 +54,16 @@ void checkButtonAndUpdate() {
 }
 
 void setupWiFi() {
-    display.setFullWindow();
-    display.firstPage();
-    do {
-        display.fillScreen(GxEPD_WHITE);
-        display.setCursor(10, 30);
-        display.print("Connecting to WiFi...");
-        display.display();
-    } while (display.nextPage());
+    if (firstBoot) {
+        display.setFullWindow();
+        display.firstPage();
+        do {
+            display.fillScreen(GxEPD_WHITE);
+            display.setCursor(10, 30);
+            display.print("Connecting to WiFi...");
+            display.display();
+        } while (display.nextPage());
+    }
 
     WiFi.begin(ssid, password);
 
@@ -66,21 +73,23 @@ void setupWiFi() {
         attempts++;
     }
 
-    display.setFullWindow();
-    display.firstPage();
-    do {
-        display.fillScreen(GxEPD_WHITE);
-        display.setCursor(10, 30);
-        if (WiFi.status() == WL_CONNECTED) {
-            display.print("WiFi connected");
-            display.setCursor(10, 60);
-            display.print("IP: ");
-            display.print(WiFi.localIP());
-        } else {
-            display.print("WiFi connection failed");
-            delay(2000); // Display the Wi-Fi status for 2 seconds
-        }
-    } while (display.nextPage());
+    if (firstBoot) {
+        display.setFullWindow();
+        display.firstPage();
+        do {
+            display.fillScreen(GxEPD_WHITE);
+            display.setCursor(10, 30);
+            if (WiFi.status() == WL_CONNECTED) {
+                display.print("WiFi connected");
+                display.setCursor(10, 60);
+                display.print("IP: ");
+                display.print(WiFi.localIP());
+            } else {
+                display.print("WiFi connection failed");
+            }
+        } while (display.nextPage());
+        delay(1000); // Display the Wi-Fi status for 1 second
+    }
 }
 
 bool fetchPrecipitationData() {
@@ -102,6 +111,9 @@ bool fetchPrecipitationData() {
             return false;
         }
 
+        // Get the time from the YR response
+        timeStr = doc["created"].as<String>();
+
         JsonArray points = doc["points"];
         Serial.println("Precipitation data:");
         for (int i = 0; i < 18 && i < points.size(); i++) {
@@ -118,7 +130,7 @@ bool fetchPrecipitationData() {
     }
 }
 
-void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char* title) {
+void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char* title, String timeStr) {
     display.fillScreen(GxEPD_WHITE);
 
     display.setFont(&FreeSans9pt7b);
@@ -126,6 +138,15 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
     // Draw title
     display.setCursor(x, y + 12);
     display.print(title);
+
+    // Draw time
+    display.setFont(); // This sets the font to the built-in font
+    display.setTextSize(1); // This sets the text size to 1 (smallest)
+    display.setCursor(x, y + 24);
+    display.print(timeStr);
+
+    // reset font to default
+    display.setFont(&FreeSans9pt7b);
 
     // Adjust graph position and size
     y += 20;
@@ -186,6 +207,26 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
     // display.print("0");
 }
 
+void updateAndSleep() {
+    setupWiFi();
+
+    if (fetchPrecipitationData()) {
+        updateDisplayWithNewData();
+    } else {
+        Serial.println("Failed to fetch data");
+    }
+
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+
+    firstBoot = false;
+
+    esp_sleep_enable_timer_wakeup(UPDATE_INTERVAL);
+    esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_PIN), LOW);
+
+    esp_deep_sleep_start();
+}
+
 void setup() {
     Serial.begin(115200);
     display.init();
@@ -193,21 +234,19 @@ void setup() {
     display.setFont(&FreeSans9pt7b);  // Set the default font to the smaller one
     display.setTextColor(GxEPD_BLACK);
 
-    setupWiFi();
-
-    Serial.println("Fetching precipitation data...");
-    if (fetchPrecipitationData()) {
-        Serial.println("Data fetched successfully");
-    } else {
-        Serial.println("Failed to fetch data");
-    }
-
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
-    updateDisplayWithNewData();  // Initial data fetch and display
+    updateAndSleep();
 }
 
 void loop() {
-    checkButtonAndUpdate();
-    delay(100);  // Small delay to prevent excessive checking
+    esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+
+    if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
+        while (digitalRead(BUTTON_PIN) == LOW) {
+            delay(10);
+        }
+    }
+
+    updateAndSleep();
 }
