@@ -9,6 +9,7 @@
 #include "config.h" // Environment variables
 #include <esp_sleep.h>
 #include <sys/time.h>
+#include <math.h>
 
 // Constants
 const char* ssid = WIFI_SSID;
@@ -16,6 +17,7 @@ const char* password = WIFI_PASSWORD;
 const char* yrApiUrl = "https://www.yr.no/api/v0/locations/" YR_LOCATION "/forecast/now";
 const int BUTTON_PIN = 39; // LilyGo T5 integrated button pin
 const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
+const float MAX_PRECIPITATION_INTENSITY = 17.0;
 
 // Global variables
 float precipitationData[18]; // Array to store 90 minutes of precipitation data (5-minute intervals)
@@ -144,6 +146,17 @@ bool fetchPrecipitationData() {
     }
 }
 
+float coordinateFromSquaredNowPrecipitationIntensity(float value, int maxHeight) {
+  float maxPrecipitationIntensitySquared = sqrt(MAX_PRECIPITATION_INTENSITY);
+  float valueSquared = sqrt(value);
+
+  if (valueSquared >= maxPrecipitationIntensitySquared) {
+    return maxHeight;
+  }
+
+  return round((valueSquared / maxPrecipitationIntensitySquared) * maxHeight);
+}
+
 void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char* title, String timeStr) {
     const int leftMargin = 10;  // Extra space on the left side
     x += leftMargin;  // Move the entire graph to the right
@@ -165,9 +178,8 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
     // reset font to default
     display.setFont(&FreeSans9pt7b);
 
-    // Adjust graph position and size
     y += 20;
-    h -= 36; // Reduce height to accommodate title and labels
+    h -= 36;
 
     // Draw axes
     display.drawLine(x, y + h, x + w, y + h, GxEPD_BLACK); // X-axis
@@ -188,19 +200,33 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
     drawRaindrop(x - 9, lineY2, 2);
     drawRaindrop(x - 9, lineY3, 1);
 
-    // Plot data points and fill area under the curve
-    for (int i = 0; i < dataSize - 1; i++) {
-        int x1 = x + (i * w / (dataSize - 1));
-        int y1 = y + h - (data[i] * h / maxVal);
-        int x2 = x + ((i + 1) * w / (dataSize - 1));
-        int y2 = y + h - (data[i + 1] * h / maxVal);
+    // Calculate coordinates
+    int coordinates[dataSize + 1][2];
+    for (int i = 0; i < dataSize; i++) {
+        int minute = i * 5; // Assuming points are 5 minutes apart
+        coordinates[i][0] = x + (minute * w / 90); // 90 minutes is the target duration
+        coordinates[i][1] = y + h - coordinateFromSquaredNowPrecipitationIntensity(data[i], h);
+    }
+    // Add an extra point at the right edge
+    coordinates[dataSize][0] = x + w;
+    coordinates[dataSize][1] = coordinates[dataSize - 1][1];
 
-        // Fill area under the curve
-        display.fillTriangle(x1, y1, x2, y2, x1, y + h, GxEPD_BLACK);
-        display.fillTriangle(x2, y2, x2, y + h, x1, y + h, GxEPD_BLACK);
-
-        // Draw line connecting points
-        display.drawLine(x1, y1, x2, y2, GxEPD_BLACK);
+    // Draw and fill the graph
+    display.fillTriangle(x, y + h, coordinates[0][0], coordinates[0][1], x, coordinates[0][1], GxEPD_BLACK);
+    for (int i = 0; i < dataSize; i++) {
+        display.fillTriangle(
+            coordinates[i][0], coordinates[i][1],
+            coordinates[i+1][0], coordinates[i+1][1],
+            coordinates[i][0], y + h,
+            GxEPD_BLACK
+        );
+        display.fillTriangle(
+            coordinates[i+1][0], coordinates[i+1][1],
+            coordinates[i+1][0], y + h,
+            coordinates[i][0], y + h,
+            GxEPD_BLACK
+        );
+        display.drawLine(coordinates[i][0], coordinates[i][1], coordinates[i+1][0], coordinates[i+1][1], GxEPD_BLACK);
     }
 
     // Add x-axis labels and ticks
