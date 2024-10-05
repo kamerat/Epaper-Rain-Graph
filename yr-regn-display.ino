@@ -159,7 +159,7 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
 
     display.setFont(); // This sets the font to the built-in font
     display.setTextSize(1); // This sets the text size to 1 (smallest)
-    display.setCursor(x, y + 24);
+    display.setCursor(x, y + 18);
     display.print(createdTime);
 
     // reset font to default
