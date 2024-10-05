@@ -8,6 +8,7 @@
 #include <Fonts/FreeSans9pt7b.h>
 #include "config.h" // Environment variables
 #include <esp_sleep.h>
+#include <sys/time.h>
 
 // Constants
 const char* ssid = WIFI_SSID;
@@ -18,7 +19,8 @@ const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
 
 // Global variables
 float precipitationData[18]; // Array to store 90 minutes of precipitation data (5-minute intervals)
-String timeStr; // String to store the time from last YR update
+String responseTime; // String to store the time from the HTTP response
+String createdTime; // String to store the time from the YR API response
 
 // Deep sleep variables
 RTC_DATA_ATTR bool firstBoot = true;
@@ -26,6 +28,22 @@ RTC_DATA_ATTR bool firstBoot = true;
 // Display initialization
 GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT> display(GxEPD2_213_BN(EPD_CS, EPD_DC, EPD_RSET, EPD_BUSY));
 
+// New function for time conversion
+String convertTime(const String& inputTime, const char* inputFormat, bool adjustTimezone = true) {
+    struct tm tm;
+    if (strptime(inputTime.c_str(), inputFormat, &tm) != NULL) {
+        time_t t = mktime(&tm);
+        if (adjustTimezone) {
+            t += 2 * 3600; // Add 2 hours for UTC+2
+        }
+        struct tm *local_tm = localtime(&t);
+
+        char timeStringBuff[20]; // Reduced buffer size as the new format is shorter
+        strftime(timeStringBuff, sizeof(timeStringBuff), "%d.%m.%y %H:%M", local_tm);
+        return String(timeStringBuff);
+    }
+    return "Failed to parse time";
+}
 
 void updateDisplayWithNewData() {
     Serial.println("Updating data...");
@@ -34,7 +52,7 @@ void updateDisplayWithNewData() {
         display.setFullWindow();
         display.firstPage();
         do {
-            drawGraph(6, 5, 235, 114, precipitationData, 18, "Nedbor neste 90 minutt", timeStr);
+            drawGraph(6, 5, 235, 114, precipitationData, 18, "Nedbor neste 90 minutt", createdTime);
         } while (display.nextPage());
     } else {
         Serial.println("Failed to update data");
@@ -97,8 +115,20 @@ bool fetchPrecipitationData() {
     http.begin(yrApiUrl);
     http.addHeader("User-Agent", USER_AGENT_PERSONAL);
 
+    const char* headerKeys[] = {"Date"};
+    http.collectHeaders(headerKeys, sizeof(headerKeys) / sizeof(headerKeys[0]));
+
     int httpResponseCode = http.GET();
     if (httpResponseCode == 200) {
+        // Get the date from the response header
+        String dateHeader = http.header("Date");
+        Serial.println("Date header:");
+        Serial.println(dateHeader);
+        if (dateHeader.length() > 0) {
+            responseTime = convertTime(dateHeader, "%a, %d %b %Y %H:%M:%S GMT");
+            Serial.println("Adjusted local response time: " + responseTime);
+        }
+
         String payload = http.getString();
         Serial.println("API Response:");
         Serial.println(payload);
@@ -111,8 +141,10 @@ bool fetchPrecipitationData() {
             return false;
         }
 
-        // Get the time from the YR response
-        timeStr = doc["created"].as<String>();
+        // Get the created time from the YR response
+        String created = doc["created"].as<String>();
+        createdTime = convertTime(created, "%Y-%m-%dT%H:%M:%S%Z");
+        Serial.println("Adjusted local created time: " + createdTime);
 
         JsonArray points = doc["points"];
         Serial.println("Precipitation data:");
@@ -139,11 +171,10 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
     display.setCursor(x, y + 12);
     display.print(title);
 
-    // Draw time
     display.setFont(); // This sets the font to the built-in font
     display.setTextSize(1); // This sets the text size to 1 (smallest)
     display.setCursor(x, y + 24);
-    display.print(timeStr);
+    display.print(createdTime);
 
     // reset font to default
     display.setFont(&FreeSans9pt7b);
