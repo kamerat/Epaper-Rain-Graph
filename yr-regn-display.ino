@@ -52,7 +52,7 @@ void updateDisplayWithNewData() {
         display.setFullWindow();
         display.firstPage();
         do {
-            drawGraph(6, 5, 235, 114, precipitationData, 18, "Nedbor neste 90 minutt", createdTime);
+            drawGraph(16, 25, 225, 78, precipitationData, 18, "Nedbor neste 90 minutt", createdTime);
         } while (display.nextPage());
     } else {
         Serial.println("Failed to update data");
@@ -158,34 +158,21 @@ float coordinateFromSquaredNowPrecipitationIntensity(float value, int maxHeight)
 }
 
 void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char* title, String timeStr) {
-    const int leftMargin = 10;  // Extra space on the left side
-    x += leftMargin;  // Move the entire graph to the right
-    w -= leftMargin;  // Reduce the width to maintain the right edge position
-
     display.fillScreen(GxEPD_WHITE);
 
-    display.setFont(&FreeSans9pt7b);
-
     // Draw title
-    display.setCursor(x, y + 12);
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(x, y - 8);  // Adjusted to be above the graph area
     display.print(title);
 
-    display.setFont(); // This sets the font to the built-in font
-    display.setTextSize(1); // This sets the text size to 1 (smallest)
-    display.setCursor(x, y + 18);
-    display.print(createdTime);
-
-    // reset font to default
-    display.setFont(&FreeSans9pt7b);
-
-    y += 20;
-    h -= 36;
+    // Draw time
+    display.setFont();
+    display.setTextSize(1);
+    display.setCursor(x, y - 2);  // Adjusted to be just below the title, above the graph area
+    display.print(timeStr);
 
     // Draw axes
     display.drawLine(x, y + h, x + w, y + h, GxEPD_BLACK); // X-axis
-
-    // Set fixed max value for y-axis
-    float maxVal = 5.0; // 5 mm/h as max precipitation
 
     // Draw horizontal grid lines with raindrop symbols
     int lineY1 = y + h * 1/4;  // Top line
