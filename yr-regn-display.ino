@@ -28,7 +28,7 @@ String createdTime; // String to store the time from the YR API response
 // Display initialization
 GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT> display(GxEPD2_213_BN(EPD_CS, EPD_DC, EPD_RSET, EPD_BUSY));
 
-// New function for time conversion
+// Helper functions
 String convertTime(const String& inputTime, const char* inputFormat, bool adjustTimezone = true) {
     struct tm tm;
     if (strptime(inputTime.c_str(), inputFormat, &tm) != NULL) {
@@ -43,6 +43,57 @@ String convertTime(const String& inputTime, const char* inputFormat, bool adjust
         return String(timeStringBuff);
     }
     return "Failed to parse time";
+}
+
+float coordinateFromSquaredNowPrecipitationIntensity(float value, int maxHeight) {
+    float maxPrecipitationIntensitySquared = sqrt(MAX_PRECIPITATION_INTENSITY);
+    float valueSquared = sqrt(value);
+
+    if (valueSquared >= maxPrecipitationIntensitySquared) {
+        return maxHeight;
+    }
+
+    return round((valueSquared / maxPrecipitationIntensitySquared) * maxHeight);
+}
+
+// Main functions
+void setup() {
+    Serial.begin(115200);
+    display.init();
+    display.setRotation(3);
+    display.setFont(&FreeSans9pt7b);
+    display.setTextColor(GxEPD_BLACK);
+
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    updateAndSleep();
+}
+
+void loop() {
+    esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+
+    if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
+        while (digitalRead(BUTTON_PIN) == LOW) {
+            delay(10);
+        }
+    }
+
+    updateAndSleep();
+}
+
+void updateAndSleep() {
+    setupWiFi();
+
+    if (fetchPrecipitationData()) {
+        updateDisplayWithNewData();
+    } else {
+        Serial.println("Failed to fetch data");
+    }
+
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    esp_sleep_enable_timer_wakeup(UPDATE_INTERVAL);
+    esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_PIN), LOW);
+    esp_deep_sleep_start();
 }
 
 void updateDisplayWithNewData() {
@@ -144,17 +195,6 @@ bool fetchPrecipitationData() {
         Serial.println(httpResponseCode);
         return false;
     }
-}
-
-float coordinateFromSquaredNowPrecipitationIntensity(float value, int maxHeight) {
-  float maxPrecipitationIntensitySquared = sqrt(MAX_PRECIPITATION_INTENSITY);
-  float valueSquared = sqrt(value);
-
-  if (valueSquared >= maxPrecipitationIntensitySquared) {
-    return maxHeight;
-  }
-
-  return round((valueSquared / maxPrecipitationIntensitySquared) * maxHeight);
 }
 
 void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char* title, String timeStr) {
@@ -270,46 +310,4 @@ void drawRaindrop(int x, int y, int fillLevel) {
         display.drawLine(x - radius + 1, y - radius + 3, x + radius - 1, y - radius + 3, GxEPD_WHITE);
         display.drawPixel(x, y - radius + 4, GxEPD_WHITE);
     }
-}
-
-void updateAndSleep() {
-    setupWiFi();
-
-    if (fetchPrecipitationData()) {
-        updateDisplayWithNewData();
-    } else {
-        Serial.println("Failed to fetch data");
-    }
-
-    WiFi.disconnect(true);
-    WiFi.mode(WIFI_OFF);
-
-    esp_sleep_enable_timer_wakeup(UPDATE_INTERVAL);
-    esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_PIN), LOW);
-
-    esp_deep_sleep_start();
-}
-
-void setup() {
-    Serial.begin(115200);
-    display.init();
-    display.setRotation(3); // Change this from 1 to 3 for 180-degree rotation
-    display.setFont(&FreeSans9pt7b);  // Set the default font to the smaller one
-    display.setTextColor(GxEPD_BLACK);
-
-    pinMode(BUTTON_PIN, INPUT_PULLUP);
-
-    updateAndSleep();
-}
-
-void loop() {
-    esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
-
-    if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
-        while (digitalRead(BUTTON_PIN) == LOW) {
-            delay(10);
-        }
-    }
-
-    updateAndSleep();
 }
