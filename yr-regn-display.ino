@@ -72,17 +72,6 @@ void checkButtonAndUpdate() {
 }
 
 void setupWiFi() {
-    if (firstBoot) {
-        display.setFullWindow();
-        display.firstPage();
-        do {
-            display.fillScreen(GxEPD_WHITE);
-            display.setCursor(10, 30);
-            display.print("Connecting to WiFi...");
-            display.display();
-        } while (display.nextPage());
-    }
-
     WiFi.begin(ssid, password);
 
     int attempts = 0;
@@ -91,22 +80,17 @@ void setupWiFi() {
         attempts++;
     }
 
-    if (firstBoot) {
+    if (firstBoot && WiFi.status() == WL_CONNECTED) {
         display.setFullWindow();
         display.firstPage();
         do {
             display.fillScreen(GxEPD_WHITE);
             display.setCursor(10, 30);
-            if (WiFi.status() == WL_CONNECTED) {
-                display.print("WiFi connected");
-                display.setCursor(10, 60);
-                display.print("IP: ");
-                display.print(WiFi.localIP());
-            } else {
-                display.print("WiFi connection failed");
-            }
+            display.print("WiFi connected");
+            display.setCursor(10, 60);
+            display.print("IP: ");
+            display.print(WiFi.localIP());
         } while (display.nextPage());
-        delay(1000); // Display the Wi-Fi status for 1 second
     }
 }
 
