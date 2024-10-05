@@ -165,6 +165,10 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
     display.setCursor(x, y - 8);  // Adjusted to be above the graph area
     display.print(title);
 
+    // As font does not support ø, hack it by adding a slash
+    display.drawLine(x + 51, y - 18, x + 43, y - 7, GxEPD_BLACK);
+    display.drawLine(x + 52, y - 18, x + 44, y - 8, GxEPD_BLACK);
+
     // Draw time
     display.setFont();
     display.setTextSize(1);
