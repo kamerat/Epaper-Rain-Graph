@@ -148,53 +148,47 @@ void setupWiFi() {
 bool fetchPrecipitationData() {
     HTTPClient http;
     http.begin(yrApiUrl);
-    http.addHeader("User-Agent", USER_AGENT_PERSONAL);
-
-    const char* headerKeys[] = {"Date"};
-    http.collectHeaders(headerKeys, sizeof(headerKeys) / sizeof(headerKeys[0]));
-
     int httpResponseCode = http.GET();
-    if (httpResponseCode == 200) {
-        // Get the date from the response header
-        String dateHeader = http.header("Date");
-        Serial.println("Date header:");
-        Serial.println(dateHeader);
-        if (dateHeader.length() > 0) {
-            responseTime = convertTime(dateHeader, "%a, %d %b %Y %H:%M:%S GMT");
-            Serial.println("Adjusted local response time: " + responseTime);
-        }
 
-        String payload = http.getString();
-        Serial.println("API Response:");
-        Serial.println(payload);
+    if (httpResponseCode != 200) {
+        Serial.printf("HTTP response code: %d\n", httpResponseCode);
+        http.end();
+        return "";
+    }
 
-        DynamicJsonDocument doc(16384);
-        DeserializationError error = deserializeJson(doc, payload);
+    String payload = http.getString();
+    http.end();
 
-        if (error) {
-            Serial.println("JSON parsing failed");
-            return false;
-        }
-
-        // Get the created time from the YR response
-        String created = doc["created"].as<String>();
-        createdTime = convertTime(created, "%Y-%m-%dT%H:%M:%S%Z", false);
-        Serial.println("Adjusted local created time: " + createdTime);
-
-        JsonArray points = doc["points"];
-        Serial.println("Precipitation data:");
-        for (int i = 0; i < 18 && i < points.size(); i++) {
-            precipitationData[i] = points[i]["precipitation"]["intensity"];
-            Serial.print(i * 5);
-            Serial.print(" min: ");
-            Serial.println(precipitationData[i]);
-        }
-        return true;
-    } else {
-        Serial.print("HTTP request failed, error: ");
-        Serial.println(httpResponseCode);
+    if (payload.isEmpty()) {
         return false;
     }
+
+    return parsePrecipitationData(payload);
+}
+
+bool parsePrecipitationData(const String& payload) {
+    DynamicJsonDocument doc(16384);
+    DeserializationError error = deserializeJson(doc, payload);
+
+    if (error) {
+        Serial.println("JSON parsing failed");
+        return false;
+    }
+
+    // Get the created time from the YR response
+    String created = doc["created"].as<String>();
+    createdTime = convertTime(created, "%Y-%m-%dT%H:%M:%S%Z", false);
+    Serial.println("Adjusted local created time: " + createdTime);
+
+    JsonArray points = doc["points"];
+    Serial.println("Precipitation data:");
+    for (int i = 0; i < 18 && i < points.size(); i++) {
+        precipitationData[i] = points[i]["precipitation"]["intensity"];
+        Serial.print(i * 5);
+        Serial.print(" min: ");
+        Serial.println(precipitationData[i]);
+    }
+    return true;
 }
 
 void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char* title, String timeStr) {
