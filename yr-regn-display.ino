@@ -127,7 +127,7 @@ bool fetchPrecipitationData() {
 
         // Get the created time from the YR response
         String created = doc["created"].as<String>();
-        createdTime = convertTime(created, "%Y-%m-%dT%H:%M:%S%Z");
+        createdTime = convertTime(created, "%Y-%m-%dT%H:%M:%S%Z", false);
         Serial.println("Adjusted local created time: " + createdTime);
 
         JsonArray points = doc["points"];
