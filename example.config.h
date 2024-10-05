@@ -11,4 +11,7 @@
 // YR location id for Bergen (Find it by the url when you search for the location on yr.no [https://www.yr.no/nn/vêrvarsel/dagleg-tabell/1-92416/Noreg/Vestland/Bergen/Bergen])
 #define YR_LOCATION "1-92416"
 
+// Debug mode
+#define DEBUG false
+
 #endif // CONFIG_H

@@ -22,8 +22,6 @@ float precipitationData[18]; // Array to store 90 minutes of precipitation data 
 String responseTime; // String to store the time from the HTTP response
 String createdTime; // String to store the time from the YR API response
 
-// Deep sleep variables
-RTC_DATA_ATTR bool firstBoot = true;
 
 // Display initialization
 GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT> display(GxEPD2_213_BN(EPD_CS, EPD_DC, EPD_RSET, EPD_BUSY));
@@ -80,7 +78,7 @@ void setupWiFi() {
         attempts++;
     }
 
-    if (firstBoot && WiFi.status() == WL_CONNECTED) {
+    if (DEBUG && WiFi.status() == WL_CONNECTED) {
         display.setFullWindow();
         display.firstPage();
         do {
@@ -147,6 +145,10 @@ bool fetchPrecipitationData() {
 }
 
 void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char* title, String timeStr) {
+    const int leftMargin = 10;  // Extra space on the left side
+    x += leftMargin;  // Move the entire graph to the right
+    w -= leftMargin;  // Reduce the width to maintain the right edge position
+
     display.fillScreen(GxEPD_WHITE);
 
     display.setFont(&FreeSans9pt7b);
@@ -173,13 +175,18 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
     // Set fixed max value for y-axis
     float maxVal = 5.0; // 5 mm/h as max precipitation
 
-    // Draw horizontal grid lines
+    // Draw horizontal grid lines with raindrop symbols
     int lineY1 = y + h * 1/4;  // Top line
     int lineY2 = y + h * 2/4;
     int lineY3 = y + h * 3/4;
     display.drawLine(x, lineY1, x + w, lineY1, GxEPD_BLACK);
     display.drawLine(x, lineY2, x + w, lineY2, GxEPD_BLACK);
     display.drawLine(x, lineY3, x + w, lineY3, GxEPD_BLACK);
+
+    // Draw raindrop symbols
+    drawRaindrop(x - 9, lineY1, 3);
+    drawRaindrop(x - 9, lineY2, 2);
+    drawRaindrop(x - 9, lineY3, 1);
 
     // Plot data points and fill area under the curve
     for (int i = 0; i < dataSize - 1; i++) {
@@ -214,12 +221,33 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
             display.print("90");
         }
     }
+}
 
-    // // Add y-axis labels
-    // display.setCursor(x - 20, y + 10);
-    // display.print(maxVal, 1);
-    // display.setCursor(x - 20, y + h);
-    // display.print("0");
+void drawRaindrop(int x, int y, int fillLevel) {
+    const int size = 6;
+    int radius = size / 2;
+
+    // Draw the raindrop shape (circle + triangle)
+    display.drawCircle(x, y, radius, GxEPD_BLACK);
+    display.drawTriangle(x - radius, y, x + radius, y, x, y - size, GxEPD_BLACK);
+
+    // Fill the drop based on the fillLevel
+    if (fillLevel == 3) {
+        display.fillCircle(x, y, radius, GxEPD_BLACK);
+        display.fillTriangle(x - radius, y, x + radius, y, x, y - size, GxEPD_BLACK);
+    } else if (fillLevel == 2) {
+        display.fillCircle(x, y, radius, GxEPD_BLACK);
+        display.drawLine(x - radius + 3, y - radius,     x + radius - 3, y - radius,     GxEPD_WHITE);
+        display.drawLine(x - radius + 2, y - radius + 1, x + radius - 2, y - radius + 1, GxEPD_WHITE);
+        display.drawLine(x - radius + 2, y - radius + 2, x + radius - 2, y - radius + 2, GxEPD_WHITE);
+    } else if (fillLevel == 1) {
+        display.fillCircle(x, y, radius, GxEPD_BLACK);
+        display.drawLine(x - radius + 3, y - radius,     x + radius - 3, y - radius,     GxEPD_WHITE);
+        display.drawLine(x - radius + 2, y - radius + 1, x + radius - 2, y - radius + 1, GxEPD_WHITE);
+        display.drawLine(x - radius + 1, y - radius + 2, x + radius - 1, y - radius + 2, GxEPD_WHITE);
+        display.drawLine(x - radius + 1, y - radius + 3, x + radius - 1, y - radius + 3, GxEPD_WHITE);
+        display.drawPixel(x, y - radius + 4, GxEPD_WHITE);
+    }
 }
 
 void updateAndSleep() {
@@ -233,8 +261,6 @@ void updateAndSleep() {
 
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
-
-    firstBoot = false;
 
     esp_sleep_enable_timer_wakeup(UPDATE_INTERVAL);
     esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_PIN), LOW);
