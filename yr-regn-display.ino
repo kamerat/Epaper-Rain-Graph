@@ -110,6 +110,18 @@ void updateDisplayWithNewData() {
     }
 }
 
+void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char* title, String timeStr) {
+    display.fillScreen(GxEPD_WHITE);
+
+    drawTitle(x, y, title);
+    drawTime(x, y, timeStr);
+    drawAxes(x, y, w, h);
+    drawGridLines(x, y, w, h);
+    drawRaindrops(x, y, h);
+    drawGraphData(x, y, w, h, data, dataSize);
+    drawXAxisLabels(x, y, w, h);
+}
+
 void checkButtonAndUpdate() {
     if (digitalRead(BUTTON_PIN) == LOW) {  // Button is active LOW
         delay(50);  // Simple debounce
@@ -191,52 +203,58 @@ bool parsePrecipitationData(const String& payload) {
     return true;
 }
 
-void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char* title, String timeStr) {
-    display.fillScreen(GxEPD_WHITE);
-
-    // Draw title
+void drawTitle(int x, int y, const char* title) {
     display.setFont(&FreeSans9pt7b);
-    display.setCursor(x, y - 8);  // Adjusted to be above the graph area
+    display.setCursor(x, y - 8);
     display.print(title);
 
     // As font does not support ø, hack it by adding a slash
     display.drawLine(x + 51, y - 18, x + 43, y - 7, GxEPD_BLACK);
     display.drawLine(x + 52, y - 18, x + 44, y - 8, GxEPD_BLACK);
+}
 
-    // Draw time
+void drawTime(int x, int y, String timeStr) {
     display.setFont();
     display.setTextSize(1);
-    display.setCursor(x, y - 2);  // Adjusted to be just below the title, above the graph area
+    display.setCursor(x, y - 2);
     display.print(timeStr);
+}
 
-    // Draw axes
+void drawAxes(int x, int y, int w, int h) {
     display.drawLine(x, y + h, x + w, y + h, GxEPD_BLACK); // X-axis
+}
 
-    // Draw horizontal grid lines with raindrop symbols
-    int lineY1 = y + h * 1/4;  // Top line
+void drawGridLines(int x, int y, int w, int h) {
+    int lineY1 = y + h * 1/4;
     int lineY2 = y + h * 2/4;
     int lineY3 = y + h * 3/4;
     display.drawLine(x, lineY1, x + w, lineY1, GxEPD_BLACK);
     display.drawLine(x, lineY2, x + w, lineY2, GxEPD_BLACK);
     display.drawLine(x, lineY3, x + w, lineY3, GxEPD_BLACK);
+}
 
-    // Draw raindrop symbols
+void drawRaindrops(int x, int y, int h) {
+    int lineY1 = y + h * 1/4;
+    int lineY2 = y + h * 2/4;
+    int lineY3 = y + h * 3/4;
     drawRaindrop(x - 9, lineY1, 3);
     drawRaindrop(x - 9, lineY2, 2);
     drawRaindrop(x - 9, lineY3, 1);
+}
+
+void drawGraphData(int x, int y, int w, int h, float* data, int dataSize) {
+    int coordinates[dataSize + 1][2];
 
     // Calculate coordinates
-    int coordinates[dataSize + 1][2];
     for (int i = 0; i < dataSize; i++) {
-        int minute = i * 5; // Assuming points are 5 minutes apart
-        coordinates[i][0] = x + (minute * w / 90); // 90 minutes is the target duration
+        int minute = i * 5;
+        coordinates[i][0] = x + (minute * w / 90);
         coordinates[i][1] = y + h - coordinateFromSquaredNowPrecipitationIntensity(data[i], h);
     }
-    // Add an extra point at the right edge
     coordinates[dataSize][0] = x + w;
     coordinates[dataSize][1] = coordinates[dataSize - 1][1];
 
-    // Draw and fill the graph
+    // Draw and fill graph
     display.fillTriangle(x, y + h, coordinates[0][0], coordinates[0][1], x, coordinates[0][1], GxEPD_BLACK);
     for (int i = 0; i < dataSize; i++) {
         display.fillTriangle(
@@ -253,20 +271,15 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
         );
         display.drawLine(coordinates[i][0], coordinates[i][1], coordinates[i+1][0], coordinates[i+1][1], GxEPD_BLACK);
     }
+}
 
-    // Add x-axis labels and ticks
+void drawXAxisLabels(int x, int y, int w, int h) {
     const char* labels[] = {"No", "15", "30", "45", "60", "75", "90"};
     for (int i = 0; i < 7; i++) {
         int labelX = x + (i * w / 6);
-
-        // Draw tick
         display.drawLine(labelX, y + h, labelX, y + h + 5, GxEPD_BLACK);
-
-        // Draw label
         display.setFont();
         display.setTextSize(1);
-
-        // offset the first and last label to align with the ticks
         if (i == 0) {
             display.setCursor(labelX, y + h + 7);
         } else if (i < 6) {
@@ -274,7 +287,6 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
         } else {
             display.setCursor(labelX - 10, y + h + 7);
         }
-
         display.print(labels[i]);
     }
 }
