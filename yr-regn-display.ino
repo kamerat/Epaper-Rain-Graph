@@ -212,14 +212,19 @@ void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char
         display.drawLine(labelX, y + h, labelX, y + h + 5, GxEPD_BLACK);
 
         // Draw label
-        if (i < 6) {
-            display.setCursor(labelX - 8, y + h + 18);
-            display.print(labels[i]);
+        display.setFont();
+        display.setTextSize(1);
+
+        // offset the first and last label to align with the ticks
+        if (i == 0) {
+            display.setCursor(labelX, y + h + 7);
+        } else if (i < 6) {
+            display.setCursor(labelX - 5, y + h + 7);
         } else {
-            // Offset the "90" label
-            display.setCursor(labelX - 10, y + h + 18);
-            display.print("90");
+            display.setCursor(labelX - 10, y + h + 7);
         }
+
+        display.print(labels[i]);
     }
 }
 
