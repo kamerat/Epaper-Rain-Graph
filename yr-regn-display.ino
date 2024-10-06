@@ -46,12 +46,12 @@ String convertTime(const String& inputTime, const char* inputFormat, bool adjust
 }
 
 float coordinateFromSquaredNowPrecipitationIntensity(float value, int maxHeight) {
+    if (value >= MAX_PRECIPITATION_INTENSITY) {
+        return maxHeight - 20; // TODO: Fix the maxHeight to be 58 instead of 78 while keeping the graph bottom aligned
+    }
+
     float maxPrecipitationIntensitySquared = sqrt(MAX_PRECIPITATION_INTENSITY);
     float valueSquared = sqrt(value);
-
-    if (valueSquared >= maxPrecipitationIntensitySquared) {
-        return maxHeight;
-    }
 
     return round((valueSquared / maxPrecipitationIntensitySquared) * maxHeight);
 }
