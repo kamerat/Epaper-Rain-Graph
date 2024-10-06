@@ -40,6 +40,7 @@ Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This pro
      - Modify the `USER_AGENT` if desired
      - Set the `YR_LOCATION` to your desired location ID
      - Set `DEBUG` to `true` or `false` as needed
+     - set `SHOW_GRAPH_ON_NO_PRECIPITATION` to liking
 
 9. Select the correct board and port:
    - Go to Tools > Board and select "ESP32 Dev Module" or your specific Lilygo T5 board
