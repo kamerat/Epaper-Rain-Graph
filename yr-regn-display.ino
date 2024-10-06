@@ -23,6 +23,7 @@ float precipitationData[18]; // Array to store 90 minutes of precipitation data 
 String responseTime; // String to store the time from the HTTP response
 String createdTime; // String to store the time from the YR API response
 bool isFirstBoot = true; // Flag to track if it's the first boot
+bool radarIsDown = false; // Flag to track if the radar is down
 
 // Display initialization
 using DisplayType = GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT>;
@@ -95,10 +96,25 @@ void updateDisplayWithNewData() {
         display.setFullWindow();
         display.firstPage();
         do {
-            drawGraph(display, 16, 25, 225, 78, precipitationData, 18, "Nedbor neste 90 minutt", createdTime);
+            if (radarIsDown) {
+                drawNoRadarView(display, createdTime);
+            } else {
+                // Check if there's any precipitation data
+                bool hasPrecipitation = false;
+                for (int i = 0; i < 18; i++) {
+                    if (precipitationData[i] > 0) {
+                        hasPrecipitation = true;
+                        break;
+                    }
+                }
+
+                if (hasPrecipitation || SHOW_GRAPH_ON_NO_PRECIPITATION) {
+                    drawPrecipitationGraph(display, 16, 25, 225, 78, precipitationData, 18, "Nedbor neste 90 minutt", createdTime);
+                } else {
+                    drawNoPrecipitationView(display, createdTime);
+                }
+            }
         } while (display.nextPage());
-    } else {
-        Serial.println("Failed to update data");
     }
 }
 
@@ -168,6 +184,13 @@ bool parsePrecipitationData(const String& payload) {
     String created = doc["created"].as<String>();
     createdTime = convertTime(created, "%Y-%m-%dT%H:%M:%S%Z", false);
     Serial.println("Adjusted local created time: " + createdTime);
+
+    // Check if radar is down
+    radarIsDown = doc["radarIsDown"].as<bool>();
+    if (radarIsDown) {
+        Serial.println("Radar is down");
+        return true; // We still return true because we got a valid response
+    }
 
     JsonArray points = doc["points"];
     Serial.println("Precipitation data:");

@@ -11,18 +11,6 @@ float coordinateFromSquaredNowPrecipitationIntensity(float value, int maxHeight)
     return round((valueSquared / maxPrecipitationIntensitySquared) * maxHeight);
 }
 
-void drawGraph(DisplayType& display, int x, int y, int w, int h, const float* data, int dataSize, const char* title, const String& timeStr) {
-    display.fillScreen(GxEPD_WHITE);
-
-    drawTitle(display, x, y, title);
-    drawTime(display, x, y, timeStr);
-    drawAxes(display, x, y, w, h);
-    drawGridLines(display, x, y, w, h);
-    drawRaindrops(display, x, y, h);
-    drawGraphData(display, x, y, w, h, data, dataSize);
-    drawXAxisLabels(display, x, y, w, h);
-}
-
 void drawTitle(DisplayType& display, int x, int y, const char* title) {
     display.setFont(&FreeSans9pt7b);
     display.setCursor(x, y - 8);

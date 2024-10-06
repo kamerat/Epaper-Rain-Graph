@@ -14,4 +14,7 @@
 // Debug mode
 #define DEBUG false
 
+// If false, the graph will be replaced with a message saying "Det blir opphald dei neste 90 minutta"
+#define SHOW_GRAPH_ON_NO_PRECIPITATION true
+
 #endif // CONFIG_H
