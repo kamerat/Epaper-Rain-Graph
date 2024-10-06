@@ -17,7 +17,6 @@ const char* password = WIFI_PASSWORD;
 const char* yrApiUrl = "https://www.yr.no/api/v0/locations/" YR_LOCATION "/forecast/now";
 const int BUTTON_PIN = 39; // LilyGo T5 integrated button pin
 const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
-const float MAX_PRECIPITATION_INTENSITY = 17.0;
 
 // Global variables
 float precipitationData[18]; // Array to store 90 minutes of precipitation data (5-minute intervals)
@@ -45,16 +44,6 @@ String convertTime(const String& inputTime, const char* inputFormat, bool adjust
     return "Failed to parse time";
 }
 
-float coordinateFromSquaredNowPrecipitationIntensity(float value, int maxHeight) {
-    if (value >= MAX_PRECIPITATION_INTENSITY) {
-        return maxHeight - 20; // TODO: Fix the maxHeight to be 58 instead of 78 while keeping the graph bottom aligned
-    }
-
-    float maxPrecipitationIntensitySquared = sqrt(MAX_PRECIPITATION_INTENSITY);
-    float valueSquared = sqrt(value);
-
-    return round((valueSquared / maxPrecipitationIntensitySquared) * maxHeight);
-}
 
 // Main functions
 void setup() {
@@ -103,23 +92,11 @@ void updateDisplayWithNewData() {
         display.setFullWindow();
         display.firstPage();
         do {
-            drawGraph(16, 25, 225, 78, precipitationData, 18, "Nedbor neste 90 minutt", createdTime);
+            drawGraph(display, 16, 25, 225, 78, precipitationData, 18, "Nedbor neste 90 minutt", createdTime);
         } while (display.nextPage());
     } else {
         Serial.println("Failed to update data");
     }
-}
-
-void drawGraph(int x, int y, int w, int h, float* data, int dataSize, const char* title, String timeStr) {
-    display.fillScreen(GxEPD_WHITE);
-
-    drawTitle(x, y, title);
-    drawTime(x, y, timeStr);
-    drawAxes(x, y, w, h);
-    drawGridLines(x, y, w, h);
-    drawRaindrops(x, y, h);
-    drawGraphData(x, y, w, h, data, dataSize);
-    drawXAxisLabels(x, y, w, h);
 }
 
 void checkButtonAndUpdate() {
@@ -201,119 +178,4 @@ bool parsePrecipitationData(const String& payload) {
         Serial.println(precipitationData[i]);
     }
     return true;
-}
-
-void drawTitle(int x, int y, const char* title) {
-    display.setFont(&FreeSans9pt7b);
-    display.setCursor(x, y - 8);
-    display.print(title);
-
-    // As font does not support ø, hack it by adding a slash
-    display.drawLine(x + 51, y - 18, x + 43, y - 7, GxEPD_BLACK);
-    display.drawLine(x + 52, y - 18, x + 44, y - 8, GxEPD_BLACK);
-}
-
-void drawTime(int x, int y, String timeStr) {
-    display.setFont();
-    display.setTextSize(1);
-    display.setCursor(x, y - 2);
-    display.print(timeStr);
-}
-
-void drawAxes(int x, int y, int w, int h) {
-    display.drawLine(x, y + h, x + w, y + h, GxEPD_BLACK); // X-axis
-}
-
-void drawGridLines(int x, int y, int w, int h) {
-    int lineY1 = y + h * 1/4;
-    int lineY2 = y + h * 2/4;
-    int lineY3 = y + h * 3/4;
-    display.drawLine(x, lineY1, x + w, lineY1, GxEPD_BLACK);
-    display.drawLine(x, lineY2, x + w, lineY2, GxEPD_BLACK);
-    display.drawLine(x, lineY3, x + w, lineY3, GxEPD_BLACK);
-}
-
-void drawRaindrops(int x, int y, int h) {
-    int lineY1 = y + h * 1/4;
-    int lineY2 = y + h * 2/4;
-    int lineY3 = y + h * 3/4;
-    drawRaindrop(x - 9, lineY1, 3);
-    drawRaindrop(x - 9, lineY2, 2);
-    drawRaindrop(x - 9, lineY3, 1);
-}
-
-void drawGraphData(int x, int y, int w, int h, float* data, int dataSize) {
-    int coordinates[dataSize + 1][2];
-
-    // Calculate coordinates
-    for (int i = 0; i < dataSize; i++) {
-        int minute = i * 5;
-        coordinates[i][0] = x + (minute * w / 90);
-        coordinates[i][1] = y + h - coordinateFromSquaredNowPrecipitationIntensity(data[i], h);
-    }
-    coordinates[dataSize][0] = x + w;
-    coordinates[dataSize][1] = coordinates[dataSize - 1][1];
-
-    // Draw and fill graph
-    display.fillTriangle(x, y + h, coordinates[0][0], coordinates[0][1], x, coordinates[0][1], GxEPD_BLACK);
-    for (int i = 0; i < dataSize; i++) {
-        display.fillTriangle(
-            coordinates[i][0], coordinates[i][1],
-            coordinates[i+1][0], coordinates[i+1][1],
-            coordinates[i][0], y + h,
-            GxEPD_BLACK
-        );
-        display.fillTriangle(
-            coordinates[i+1][0], coordinates[i+1][1],
-            coordinates[i+1][0], y + h,
-            coordinates[i][0], y + h,
-            GxEPD_BLACK
-        );
-        display.drawLine(coordinates[i][0], coordinates[i][1], coordinates[i+1][0], coordinates[i+1][1], GxEPD_BLACK);
-    }
-}
-
-void drawXAxisLabels(int x, int y, int w, int h) {
-    const char* labels[] = {"No", "15", "30", "45", "60", "75", "90"};
-    for (int i = 0; i < 7; i++) {
-        int labelX = x + (i * w / 6);
-        display.drawLine(labelX, y + h, labelX, y + h + 5, GxEPD_BLACK);
-        display.setFont();
-        display.setTextSize(1);
-        if (i == 0) {
-            display.setCursor(labelX, y + h + 7);
-        } else if (i < 6) {
-            display.setCursor(labelX - 5, y + h + 7);
-        } else {
-            display.setCursor(labelX - 10, y + h + 7);
-        }
-        display.print(labels[i]);
-    }
-}
-
-void drawRaindrop(int x, int y, int fillLevel) {
-    const int size = 6;
-    int radius = size / 2;
-
-    // Draw the raindrop shape (circle + triangle)
-    display.drawCircle(x, y, radius, GxEPD_BLACK);
-    display.drawTriangle(x - radius, y, x + radius, y, x, y - size, GxEPD_BLACK);
-
-    // Fill the drop based on the fillLevel
-    if (fillLevel == 3) {
-        display.fillCircle(x, y, radius, GxEPD_BLACK);
-        display.fillTriangle(x - radius, y, x + radius, y, x, y - size, GxEPD_BLACK);
-    } else if (fillLevel == 2) {
-        display.fillCircle(x, y, radius, GxEPD_BLACK);
-        display.drawLine(x - radius + 3, y - radius,     x + radius - 3, y - radius,     GxEPD_WHITE);
-        display.drawLine(x - radius + 2, y - radius + 1, x + radius - 2, y - radius + 1, GxEPD_WHITE);
-        display.drawLine(x - radius + 2, y - radius + 2, x + radius - 2, y - radius + 2, GxEPD_WHITE);
-    } else if (fillLevel == 1) {
-        display.fillCircle(x, y, radius, GxEPD_BLACK);
-        display.drawLine(x - radius + 3, y - radius,     x + radius - 3, y - radius,     GxEPD_WHITE);
-        display.drawLine(x - radius + 2, y - radius + 1, x + radius - 2, y - radius + 1, GxEPD_WHITE);
-        display.drawLine(x - radius + 1, y - radius + 2, x + radius - 1, y - radius + 2, GxEPD_WHITE);
-        display.drawLine(x - radius + 1, y - radius + 3, x + radius - 1, y - radius + 3, GxEPD_WHITE);
-        display.drawPixel(x, y - radius + 4, GxEPD_WHITE);
-    }
 }
