@@ -22,7 +22,7 @@ const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
 float precipitationData[18]; // Array to store 90 minutes of precipitation data (5-minute intervals)
 String responseTime; // String to store the time from the HTTP response
 String createdTime; // String to store the time from the YR API response
-
+bool isFirstBoot = true; // Flag to track if it's the first boot
 
 // Display initialization
 using DisplayType = GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT>;
@@ -79,6 +79,8 @@ void updateAndSleep() {
         Serial.println("Failed to fetch data");
     }
 
+    isFirstBoot = false;
+
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
     esp_sleep_enable_timer_wakeup(UPDATE_INTERVAL);
@@ -97,6 +99,7 @@ void updateDisplayWithNewData() {
         } while (display.nextPage());
     } else {
         Serial.println("Failed to update data");
+        displayDataFetchError(display);
     }
 }
 
@@ -121,8 +124,11 @@ void setupWiFi() {
         attempts++;
     }
 
-    if (DEBUG && WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() != WL_CONNECTED) {
+        displayWiFiError(display);
+    } else if (DEBUG && isFirstBoot) {  // Only display WiFi status on first boot
         displayWiFiStatus(display, true, WiFi.localIP());
+        delay(1000);  // Display WiFi status for 1 second
     }
 }
 
@@ -133,14 +139,16 @@ bool fetchPrecipitationData() {
 
     if (httpResponseCode != 200) {
         Serial.printf("HTTP response code: %d\n", httpResponseCode);
+        displayHTTPError(display, httpResponseCode);
         http.end();
-        return "";
+        return false;
     }
 
     String payload = http.getString();
     http.end();
 
     if (payload.isEmpty()) {
+        displayDataFetchError(display);
         return false;
     }
 
@@ -153,6 +161,7 @@ bool parsePrecipitationData(const String& payload) {
 
     if (error) {
         Serial.println("JSON parsing failed");
+        displayJSONParsingError(display);
         return false;
     }
 
