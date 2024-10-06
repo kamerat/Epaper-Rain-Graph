@@ -28,10 +28,12 @@ void displayError(DisplayType& display, const char* errorMessage) {
                     lastSpace = i;
                 }
             }
+            line.trim();
             display.setCursor(10, yPos);
             display.print(line);
             yPos += 25;
             message = message.substring(line.length());
+            message.trim();
         }
     } while (display.nextPage());
 }
