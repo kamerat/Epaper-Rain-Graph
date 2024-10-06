@@ -2,6 +2,8 @@
 
 Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This project displays a precipitation forecast for the next 90 minutes using data from YR.no.
 
+<img src="https://github.com/user-attachments/assets/b2aef714-5bec-43eb-8240-26e3a8b5919c" alt="drawing" width="450"/>
+
 ## Hardware Requirements
 
 - Lilygo T5 2.13" ESP32 E-paper display
