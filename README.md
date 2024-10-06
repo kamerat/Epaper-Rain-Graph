@@ -21,18 +21,19 @@ Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This pro
    - Search for "esp32" and install the "ESP32 by Espressif Systems" package
 
 3. Install required libraries:
+   - Download libs from https://github.com/Xinyuan-LilyGO/LilyGo-T5-Epaper-Series/tree/master/lib and put them in `Documents\Arduino\libraries`
    - Go to Sketch > Include Library > Manage Libraries
    - Search for and install the following libraries:
-     - GxEPD2
+     - Time
      - ArduinoJson
 
-4. Clone this repository or download the `yr-regn-display.ino` file
+5. Clone this repository or download the `yr-regn-display.ino` file
 
-5. Create a `config.h` file in the same directory as `yr-regn-display.ino` based on the `example.config.h` file
+6. Create a `config.h` file in the same directory as `yr-regn-display.ino` based on the `example.config.h` file
 
-6. Open the `yr-regn-display.ino` file in Arduino IDE
+7. Open the `yr-regn-display.ino` file in Arduino IDE
 
-7. Customize your configuration:
+8. Customize your configuration:
    - In the `config.h` file:
      - Replace `"MyWiFiSSID"` with your Wi-Fi SSID
      - Replace `"MyWiFiPassword"` with your Wi-Fi password
@@ -40,11 +41,11 @@ Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This pro
      - Set the `YR_LOCATION` to your desired location ID
      - Set `DEBUG` to `true` or `false` as needed
 
-8. Select the correct board and port:
+9. Select the correct board and port:
    - Go to Tools > Board and select "ESP32 Dev Module" or your specific Lilygo T5 board
    - Go to Tools > Port and select the appropriate port for your device
 
-9. Upload the sketch to your Lilygo T5 device
+10. Upload the sketch to your Lilygo T5 device
 
 ## Usage
 
