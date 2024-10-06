@@ -25,7 +25,8 @@ String createdTime; // String to store the time from the YR API response
 
 
 // Display initialization
-GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT> display(GxEPD2_213_BN(EPD_CS, EPD_DC, EPD_RSET, EPD_BUSY));
+using DisplayType = GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT>;
+DisplayType display(GxEPD2_213_BN(EPD_CS, EPD_DC, EPD_RSET, EPD_BUSY));
 
 // Helper functions
 String convertTime(const String& inputTime, const char* inputFormat, bool adjustTimezone = true) {
@@ -121,16 +122,7 @@ void setupWiFi() {
     }
 
     if (DEBUG && WiFi.status() == WL_CONNECTED) {
-        display.setFullWindow();
-        display.firstPage();
-        do {
-            display.fillScreen(GxEPD_WHITE);
-            display.setCursor(10, 30);
-            display.print("WiFi connected");
-            display.setCursor(10, 60);
-            display.print("IP: ");
-            display.print(WiFi.localIP());
-        } while (display.nextPage());
+        displayWiFiStatus(display, true, WiFi.localIP());
     }
 }
 

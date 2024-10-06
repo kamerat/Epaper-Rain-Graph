@@ -1,5 +1,3 @@
-#include "drawGraph.h"
-
 const float MAX_PRECIPITATION_INTENSITY = 17.0;
 
 float coordinateFromSquaredNowPrecipitationIntensity(float value, int maxHeight) {
