@@ -99,7 +99,6 @@ void updateDisplayWithNewData() {
         } while (display.nextPage());
     } else {
         Serial.println("Failed to update data");
-        displayDataFetchError(display);
     }
 }
 
