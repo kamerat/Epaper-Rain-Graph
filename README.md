@@ -26,6 +26,8 @@ Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This pro
    - Search for and install the following libraries:
      - Time
      - ArduinoJson
+     - WiFiManager
+     - QRcodeDisplay
 
 5. Clone this repository or download the `yr-regn-display.ino` file
 
@@ -35,8 +37,6 @@ Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This pro
 
 8. Customize your configuration:
    - In the `config.h` file:
-     - Replace `"MyWiFiSSID"` with your Wi-Fi SSID
-     - Replace `"MyWiFiPassword"` with your Wi-Fi password
      - Modify the `USER_AGENT` if desired
      - Set the `YR_LOCATION` to your desired location ID
      - Set `DEBUG` to `true` or `false` as needed
@@ -50,7 +50,7 @@ Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This pro
 
 ## Usage
 
-Once uploaded, the device will connect to Wi-Fi, fetch precipitation data from YR.no, and display a graph showing the precipitation forecast for the next 90 minutes.
+Once uploaded, the device will prompt you to connect to Wi-Fi. Once connected, it will fetch precipitation data from YR.no, and display a graph showing the precipitation forecast for the next 90 minutes.
 
 ## Contributing
 

@@ -10,10 +10,9 @@
 #include <esp_sleep.h>
 #include <sys/time.h>
 #include <math.h>
+#include <WiFiManager.h>
 
 // Constants
-const char* ssid = WIFI_SSID;
-const char* password = WIFI_PASSWORD;
 const char* yrApiUrl = "https://www.yr.no/api/v0/locations/" YR_LOCATION "/forecast/now";
 const int BUTTON_PIN = 39; // LilyGo T5 integrated button pin
 const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
@@ -22,7 +21,6 @@ const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
 float precipitationData[18]; // Array to store 90 minutes of precipitation data (5-minute intervals)
 String responseTime; // String to store the time from the HTTP response
 String createdTime; // String to store the time from the YR API response
-bool isFirstBoot = true; // Flag to track if it's the first boot
 bool radarIsDown = false; // Flag to track if the radar is down
 
 // Display initialization
@@ -46,7 +44,6 @@ String convertTime(const String& inputTime, const char* inputFormat, bool adjust
     return "Failed to parse time";
 }
 
-
 // Main functions
 void setup() {
     Serial.begin(115200);
@@ -56,8 +53,30 @@ void setup() {
     display.setTextColor(GxEPD_BLACK);
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
-    updateAndSleep();
+
+    WiFiManager wifiManager;
+
+    wifiManager.setConfigPortalTimeout(180);
+
+    if (DEBUG) {
+        wifiManager.resetSettings();
+    }
+
+    const char* randomWifiPassword = generatePassword();
+
+    wifiManager.setAPCallback([&](WiFiManager* wifiManager) {
+        displayWiFiSetup(display, wifiManager, randomWifiPassword);
+    });
+
+    if (wifiManager.autoConnect("regnvarsel", randomWifiPassword)) {
+        Serial.println("WiFi connected");
+        updateAndSleep();
+    } else {
+        Serial.println("Failed to connect and hit timeout");
+        ESP.restart();
+    }
 }
+
 
 void loop() {
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
@@ -66,21 +85,16 @@ void loop() {
         while (digitalRead(BUTTON_PIN) == LOW) {
             delay(10);
         }
+        updateAndSleep();
     }
-
-    updateAndSleep();
 }
 
 void updateAndSleep() {
-    setupWiFi();
-
     if (fetchPrecipitationData()) {
         updateDisplayWithNewData();
     } else {
         Serial.println("Failed to fetch data");
     }
-
-    isFirstBoot = false;
 
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
@@ -115,35 +129,6 @@ void updateDisplayWithNewData() {
                 }
             }
         } while (display.nextPage());
-    }
-}
-
-void checkButtonAndUpdate() {
-    if (digitalRead(BUTTON_PIN) == LOW) {  // Button is active LOW
-        delay(50);  // Simple debounce
-        if (digitalRead(BUTTON_PIN) == LOW) {
-            updateDisplayWithNewData();
-            while (digitalRead(BUTTON_PIN) == LOW) {
-                delay(10);  // Wait for button release
-            }
-        }
-    }
-}
-
-void setupWiFi() {
-    WiFi.begin(ssid, password);
-
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-        delay(500);
-        attempts++;
-    }
-
-    if (WiFi.status() != WL_CONNECTED) {
-        displayWiFiError(display);
-    } else if (DEBUG && isFirstBoot) {  // Only display WiFi status on first boot
-        displayWiFiStatus(display, true, WiFi.localIP());
-        delay(1000);  // Display WiFi status for 1 second
     }
 }
 
@@ -201,4 +186,15 @@ bool parsePrecipitationData(const String& payload) {
         Serial.println(precipitationData[i]);
     }
     return true;
+}
+
+const char* generatePassword() {
+    static const char* passwords[] = {
+        "regnbukse", "paraply", "solskinn", "skybrudd",
+        "duskregn", "plaskedam", "takrenne", "regnskyll",
+        "regnbuer", "flomregn", "lynogtorden"
+    };
+    int arraySize = sizeof(passwords) / sizeof(passwords[0]);
+    int randomIndex = random(0, arraySize);
+    return passwords[randomIndex];
 }
