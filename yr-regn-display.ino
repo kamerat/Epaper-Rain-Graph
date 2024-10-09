@@ -27,23 +27,6 @@ bool radarIsDown = false; // Flag to track if the radar is down
 using DisplayType = GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT>;
 DisplayType display(GxEPD2_213_BN(EPD_CS, EPD_DC, EPD_RSET, EPD_BUSY));
 
-// Helper functions
-String convertTime(const String& inputTime, const char* inputFormat, bool adjustTimezone = true) {
-    struct tm tm;
-    if (strptime(inputTime.c_str(), inputFormat, &tm) != NULL) {
-        time_t t = mktime(&tm);
-        if (adjustTimezone) {
-            t += 2 * 3600; // Add 2 hours for UTC+2
-        }
-        struct tm *local_tm = localtime(&t);
-
-        char timeStringBuff[20]; // Reduced buffer size as the new format is shorter
-        strftime(timeStringBuff, sizeof(timeStringBuff), "%d.%m.%y %H:%M", local_tm);
-        return String(timeStringBuff);
-    }
-    return "Failed to parse time";
-}
-
 // Main functions
 void setup() {
     Serial.begin(115200);
@@ -157,6 +140,23 @@ bool fetchPrecipitationData() {
     }
 
     return parsePrecipitationData(payload);
+}
+
+// Helper function
+String convertTime(const String& inputTime, const char* inputFormat, bool adjustTimezone = true) {
+    struct tm tm;
+    if (strptime(inputTime.c_str(), inputFormat, &tm) != NULL) {
+        time_t t = mktime(&tm);
+        if (adjustTimezone) {
+            t += 2 * 3600; // Add 2 hours for UTC+2
+        }
+        struct tm *local_tm = localtime(&t);
+
+        char timeStringBuff[20]; // Reduced buffer size as the new format is shorter
+        strftime(timeStringBuff, sizeof(timeStringBuff), "%d.%m.%y %H:%M", local_tm);
+        return String(timeStringBuff);
+    }
+    return "Failed to parse time";
 }
 
 bool parsePrecipitationData(const String& payload) {
