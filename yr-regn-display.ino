@@ -38,12 +38,14 @@ void setup() {
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
     WiFiManager wifiManager;
-
     wifiManager.setConfigPortalTimeout(300);
 
     if (DEBUG) {
         wifiManager.resetSettings();
     }
+
+    // Check for 3sec button press to reset device
+    checkButtonPressForReset(wifiManager);
 
     const char* randomWifiPassword = generatePassword();
 
@@ -63,7 +65,6 @@ void setup() {
         esp_deep_sleep_start();
     }
 }
-
 
 void loop() {
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
@@ -201,4 +202,24 @@ const char* generatePassword() {
     int arraySize = sizeof(passwords) / sizeof(passwords[0]);
     int randomIndex = random(0, arraySize);
     return passwords[randomIndex];
+}
+
+void checkButtonPressForReset(WiFiManager& wifiManager) {
+    if (digitalRead(BUTTON_PIN) == LOW) {
+        unsigned long startTime = millis();
+        while (digitalRead(BUTTON_PIN) == LOW) {
+            if (millis() - startTime > 3000) {  // 3 seconds hold time
+                display.setFullWindow();
+                display.firstPage();
+                do {
+                    display.fillScreen(GxEPD_WHITE);
+                    display.setCursor(10, 30);
+                    display.print("Resetting device...");
+                } while (display.nextPage());
+
+                wifiManager.resetSettings();
+                ESP.restart();
+            }
+        }
+    }
 }
