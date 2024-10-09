@@ -25,3 +25,31 @@ void displayWiFiSetup(DisplayType& display, WiFiManager *wifiManager, const char
         display.print(randomWifiPassword);
     } while (display.nextPage());
 }
+
+void displayWiFiFailedSleep(DisplayType& display) {
+    display.setFullWindow();
+    display.firstPage();
+    do {
+        display.fillScreen(GxEPD_WHITE);
+        display.setTextColor(GxEPD_BLACK);
+        display.setFont();
+
+        // draw zzz
+        display.setFont(&FreeSans9pt7b);
+        display.setCursor(80, 45);
+        display.print("z");
+
+        display.setCursor(100, 35);
+        display.print("z");
+
+        display.setCursor(120, 25);
+        display.print("z");
+
+        // Draw the message
+        display.setCursor(10, 80);
+        display.print("WiFi konfigurasjon feilet");
+        display.setCursor(10, 95);
+        display.setFont();
+        display.print("Restart enheten for a prove paa nytt");
+    } while (display.nextPage());
+}

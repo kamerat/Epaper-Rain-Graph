@@ -56,7 +56,7 @@ void setup() {
 
     WiFiManager wifiManager;
 
-    wifiManager.setConfigPortalTimeout(180);
+    wifiManager.setConfigPortalTimeout(300);
 
     if (DEBUG) {
         wifiManager.resetSettings();
@@ -73,7 +73,11 @@ void setup() {
         updateAndSleep();
     } else {
         Serial.println("Failed to connect and hit timeout");
-        ESP.restart();
+        WiFi.disconnect(true);
+        WiFi.mode(WIFI_OFF);
+        displayWiFiFailedSleep(display);
+        esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_PIN), LOW);
+        esp_deep_sleep_start();
     }
 }
 
