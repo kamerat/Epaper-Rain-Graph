@@ -59,3 +59,7 @@ Feel free to open issues or submit pull requests to improve this project.
 ## License
 
 This project is open-source and available under the [MIT License](LICENSE).
+
+## Attributions
+
+- Weather data provided by the Norwegian Meteorological Institute. Used under the [CC BY 4.0 license](https://creativecommons.org/licenses/by/4.0/).
