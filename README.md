@@ -58,7 +58,7 @@ Feel free to open issues or submit pull requests to improve this project.
 
 ## License
 
-This project is open-source and available under the [MIT License](LICENSE).
+This work is licensed under [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 ## Attributions
 
