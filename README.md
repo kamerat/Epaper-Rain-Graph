@@ -6,7 +6,7 @@ Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This pro
 
 ## Hardware Requirements
 
-- Lilygo T5 2.13" ESP32 E-paper display
+- [Lilygo T5 2.13" ESP32 E-paper display](https://s.click.aliexpress.com/e/_EvVOHHF)
 
 ## Software Setup
 
