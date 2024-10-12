@@ -17,6 +17,7 @@
 const char* yrApiUrl = "https://www.yr.no/api/v0/locations/%s/forecast/now";
 const int BUTTON_PIN = 39; // LilyGo T5 integrated button pin
 const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
+const int CYCLES_BEFORE_RESTART = 288; // Restart every 24 hours (288 * 5 minutes)
 
 // Global variables
 String yrLocation; // String to store the YR location provided by the user
@@ -25,6 +26,9 @@ String responseTime; // String to store the time from the HTTP response
 String createdTime; // String to store the time from the YR API response
 bool radarIsDown = false; // Flag to track if the radar is down
 Preferences prefs; // Long-term persistence storage for YR location
+
+// RTC memory variables
+RTC_DATA_ATTR int updateCycles = 0; // Persist across deep sleep
 
 // Display initialization
 using DisplayType = GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT>;
@@ -110,6 +114,12 @@ void loop() {
 }
 
 void updateAndSleep() {
+    if (++updateCycles >= CYCLES_BEFORE_RESTART) {
+        Serial.println("Restarting device due to update cycle limit");
+        ESP.restart();
+        return;
+    }
+
     if (fetchPrecipitationData()) {
         updateDisplayWithNewData();
     } else {
