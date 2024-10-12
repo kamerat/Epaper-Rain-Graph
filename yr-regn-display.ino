@@ -44,10 +44,6 @@ void setup() {
 
     wifiManager.setConfigPortalTimeout(300);
 
-    if (DEBUG) {
-        wifiManager.resetSettings();
-    }
-
     prefs.begin("regnvarsel", false);
     yrLocation = prefs.getString("location", "");
     WiFiManagerParameter custom_yr_location("yr_location", "YR Location ID", yrLocation.c_str(), 40);
