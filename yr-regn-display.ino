@@ -11,21 +11,26 @@
 #include <sys/time.h>
 #include <math.h>
 #include <WiFiManager.h>
+#include <Preferences.h>
 
 // Constants
-const char* yrApiUrl = "https://www.yr.no/api/v0/locations/" YR_LOCATION "/forecast/now";
+const char* yrApiUrl = "https://www.yr.no/api/v0/locations/%s/forecast/now";
 const int BUTTON_PIN = 39; // LilyGo T5 integrated button pin
 const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
 
 // Global variables
+String yrLocation; // String to store the YR location provided by the user
 float precipitationData[18]; // Array to store 90 minutes of precipitation data (5-minute intervals)
 String responseTime; // String to store the time from the HTTP response
 String createdTime; // String to store the time from the YR API response
 bool radarIsDown = false; // Flag to track if the radar is down
+Preferences prefs; // Long-term persistence storage for YR location
 
 // Display initialization
 using DisplayType = GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT>;
 DisplayType display(GxEPD2_213_BN(EPD_CS, EPD_DC, EPD_RSET, EPD_BUSY));
+
+WiFiManager wifiManager;
 
 // Main functions
 void setup() {
@@ -37,12 +42,32 @@ void setup() {
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
-    WiFiManager wifiManager;
     wifiManager.setConfigPortalTimeout(300);
 
     if (DEBUG) {
         wifiManager.resetSettings();
     }
+
+    prefs.begin("regnvarsel", false);
+    yrLocation = prefs.getString("location", "");
+    WiFiManagerParameter custom_yr_location("yr_location", "YR Location ID", yrLocation.c_str(), 40);
+    wifiManager.addParameter(&custom_yr_location);
+
+    // Add instructions for the YR location ID in the WiFi setup
+    WiFiManagerParameter custom_text("<p style=\"margin:0;font-size:11px;\">Find the location ID by searching for your location on yr.\u200Bno and copying the \"x-xxxxx\" ID from the URL. (e.g. yr.\u200Bno/nn/vêrvarsel/dagleg-tabell/<strong>1-92416</strong>/...)</p>");
+    wifiManager.addParameter(&custom_text);
+
+    // Set styling and redirect directly to the wifi setup page
+    wifiManager.setCustomHeadElement("<style>button{background-color:#000;}.msg,h1{display:none;}</style>"
+                                     "<script>"
+                                     "if(!localStorage.getItem('visited')){"
+                                     "localStorage.setItem('visited','true');"
+                                     "window.location.href='/wifi';"
+                                     "}"
+                                     "</script>");
+
+    const char * menu[] = {"wifi","info"};
+    wifiManager.setMenu(menu, 2);
 
     // Check for 3sec button press to reset device
     checkButtonPressForReset(wifiManager);
@@ -53,9 +78,20 @@ void setup() {
         displayWiFiSetup(display, wifiManager, randomWifiPassword);
     });
 
-    if (wifiManager.autoConnect("regnvarsel", randomWifiPassword)) {
+    if (wifiManager.autoConnect("Regnvarsel", randomWifiPassword)) {
         Serial.println("WiFi connected");
-        updateAndSleep();
+        yrLocation = custom_yr_location.getValue();
+
+        if (yrLocation.length() == 0) {
+            displayError(display, "YR location not set. Please configure in WiFi settings");
+            delay(5000);
+            wifiManager.resetSettings();
+            prefs.clear();
+            ESP.restart();
+        } else {
+            prefs.putString("location", yrLocation);
+            updateAndSleep();
+        }
     } else {
         Serial.println("Failed to connect and hit timeout");
         WiFi.disconnect(true);
@@ -122,7 +158,9 @@ void updateDisplayWithNewData() {
 
 bool fetchPrecipitationData() {
     HTTPClient http;
-    http.begin(yrApiUrl);
+    char fullUrl[200];
+    snprintf(fullUrl, sizeof(fullUrl), yrApiUrl, yrLocation.c_str());
+    http.begin(fullUrl);
     int httpResponseCode = http.GET();
 
     if (httpResponseCode != 200) {
