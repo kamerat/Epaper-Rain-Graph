@@ -122,8 +122,6 @@ void updateAndSleep() {
 
     if (fetchPrecipitationData()) {
         updateDisplayWithNewData();
-    } else {
-        Serial.println("Failed to fetch data");
     }
 
     WiFi.disconnect(true);
@@ -134,32 +132,29 @@ void updateAndSleep() {
 }
 
 void updateDisplayWithNewData() {
-    Serial.println("Updating data...");
-    if (fetchPrecipitationData()) {
-        Serial.println("Data updated successfully");
-        display.setFullWindow();
-        display.firstPage();
-        do {
-            if (radarIsDown) {
-                drawNoRadarView(display, createdTime);
-            } else {
-                // Check if there's any precipitation data
-                bool hasPrecipitation = false;
-                for (int i = 0; i < 18; i++) {
-                    if (precipitationData[i] > 0) {
-                        hasPrecipitation = true;
-                        break;
-                    }
-                }
-
-                if (hasPrecipitation || SHOW_GRAPH_ON_NO_PRECIPITATION) {
-                    drawPrecipitationGraph(display, 16, 25, 225, 78, precipitationData, 18, "Nedbor neste 90 minutt", createdTime);
-                } else {
-                    drawNoPrecipitationView(display, createdTime);
+    Serial.println("Updating display with new data...");
+    display.setFullWindow();
+    display.firstPage();
+    do {
+        if (radarIsDown) {
+            drawNoRadarView(display, createdTime);
+        } else {
+            // Check if there's any precipitation data
+            bool hasPrecipitation = false;
+            for (int i = 0; i < 18; i++) {
+                if (precipitationData[i] > 0) {
+                    hasPrecipitation = true;
+                    break;
                 }
             }
-        } while (display.nextPage());
-    }
+
+            if (hasPrecipitation || SHOW_GRAPH_ON_NO_PRECIPITATION) {
+                drawPrecipitationGraph(display, 16, 25, 225, 78, precipitationData, 18, "Nedbor neste 90 minutt", createdTime);
+            } else {
+                drawNoPrecipitationView(display, createdTime);
+            }
+        }
+    } while (display.nextPage());
 }
 
 bool fetchPrecipitationData() {
@@ -181,6 +176,7 @@ bool fetchPrecipitationData() {
 
     if (payload.isEmpty()) {
         displayDataFetchError(display);
+        Serial.println("Empty payload received from YR API");
         return false;
     }
 
