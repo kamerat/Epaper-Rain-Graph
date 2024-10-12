@@ -1,5 +1,4 @@
 #define LILYGO_T5_V213
-#include <boards.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
@@ -32,7 +31,7 @@ RTC_DATA_ATTR int updateCycles = 0; // Persist across deep sleep
 
 // Display initialization
 using DisplayType = GxEPD2_BW<GxEPD2_213_BN, GxEPD2_213_BN::HEIGHT>;
-DisplayType display(GxEPD2_213_BN(EPD_CS, EPD_DC, EPD_RSET, EPD_BUSY));
+DisplayType display(GxEPD2_213_BN(5, 17, 16, 4));
 
 WiFiManager wifiManager;
 
