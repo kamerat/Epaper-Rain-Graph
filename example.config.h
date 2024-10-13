@@ -7,4 +7,7 @@
 // If false, the graph will be replaced with a message saying "Det blir opphald dei neste 90 minutta"
 #define SHOW_GRAPH_ON_NO_PRECIPITATION true
 
+#define BATTERY_MAX_VOLTAGE 4.2  // Charging voltage
+#define BATTERY_MIN_VOLTAGE 2.75 // Discharge voltage
+
 #endif // CONFIG_H
