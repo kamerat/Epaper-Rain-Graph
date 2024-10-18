@@ -74,7 +74,12 @@ void setup() {
     const char* randomWifiPassword = generatePassword();
 
     wifiManager.setAPCallback([&](WiFiManager* wifiManager) {
-        displayWiFiSetup(display, wifiManager, randomWifiPassword);
+        WiFi.mode(WIFI_STA); // We need to be enable wifi first in order to get saved WiFi info via WiFiManager
+        if (wifiManager->getWiFiIsSaved()) {
+            handleWiFiConnectionFailure();
+        } else {
+            displayWiFiSetup(display, wifiManager, randomWifiPassword);
+        }
     });
 
     if (wifiManager.autoConnect("Regnvarsel", randomWifiPassword)) {
@@ -93,11 +98,7 @@ void setup() {
         }
     } else {
         Serial.println("Failed to connect and hit timeout");
-        WiFi.disconnect(true);
-        WiFi.mode(WIFI_OFF);
-        displayWiFiFailedSleep(display);
-        esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_PIN), LOW);
-        esp_deep_sleep_start();
+        handleWiFiConnectionFailure();
     }
 }
 
@@ -265,6 +266,23 @@ void checkButtonPressForReset(WiFiManager& wifiManager) {
             }
         }
     }
+}
+
+void handleWiFiConnectionFailure() {
+    WiFi.mode(WIFI_STA); // We need to be enable wifi first in order to get saved WiFi info via WiFiManager
+    if (wifiManager.getWiFiIsSaved()) {
+        // WiFi was previously configured but connection failed
+        displayWiFiLostMessage(display, UPDATE_INTERVAL / 1000000 / 60);
+        esp_sleep_enable_timer_wakeup(UPDATE_INTERVAL);
+    } else {
+        // No WiFi configured, fallback to original behavior
+        displayWiFiSetupFailed(display);
+    }
+
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(BUTTON_PIN), LOW);
+    esp_deep_sleep_start();
 }
 
 float getBatteryVoltage() {

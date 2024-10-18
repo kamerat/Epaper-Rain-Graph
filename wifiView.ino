@@ -26,7 +26,7 @@ void displayWiFiSetup(DisplayType& display, WiFiManager *wifiManager, const char
     } while (display.nextPage());
 }
 
-void displayWiFiFailedSleep(DisplayType& display) {
+void displayWiFiSetupFailed(DisplayType& display) {
     display.setFullWindow();
     display.firstPage();
     do {
@@ -51,5 +51,29 @@ void displayWiFiFailedSleep(DisplayType& display) {
         display.setCursor(10, 95);
         display.setFont();
         display.print("Restart enheten for a prove paa nytt");
+    } while (display.nextPage());
+}
+
+void displayWiFiLostMessage(DisplayType& display, int retryTime) {
+    display.setFullWindow();
+    display.firstPage();
+    do {
+        display.fillScreen(GxEPD_WHITE);
+        display.setFont(&FreeSans9pt7b);
+        display.setCursor(10, 30);
+        display.print("Mistet WiFi-tilkobling");
+        display.setFont();
+        display.setCursor(10, 50);
+        display.print("Prover igjen om ");
+        display.drawLine(23, 55, 23 + 3, 55 - 3, GxEPD_BLACK);
+        display.print(retryTime);
+        display.print(" minutter.");
+        display.setCursor(10, 80);
+        display.print("Eller hold nede knappen i 3 sekunder");
+        display.setCursor(10, 90);
+        display.print("mens du starter opp enheten for a");
+        display.drawPixel(display.getCursorX() - 4, 90, GxEPD_BLACK);
+        display.setCursor(10, 100);
+        display.print("nullstille WiFi-innstillinger.");
     } while (display.nextPage());
 }
