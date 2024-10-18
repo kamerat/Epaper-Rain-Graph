@@ -10,4 +10,6 @@
 #define BATTERY_MAX_VOLTAGE 4.2  // Charging voltage
 #define BATTERY_MIN_VOLTAGE 2.75 // Discharge voltage
 
+#define SHOW_BATTERY_INDICATOR true
+
 #endif // CONFIG_H
