@@ -153,6 +153,10 @@ void updateDisplayWithNewData() {
                 drawNoPrecipitationView(display, createdTime);
             }
         }
+
+        if (SHOW_BATTERY_INDICATOR) {
+            drawBatteryIndicator(display, 110, 23);
+        }
     } while (display.nextPage());
 }
 
@@ -260,5 +264,46 @@ void checkButtonPressForReset(WiFiManager& wifiManager) {
                 ESP.restart();
             }
         }
+    }
+}
+
+float getBatteryVoltage() {
+    float voltage = analogRead(35) / 4096.0 * 7.46;
+    return voltage;
+}
+
+int getBatteryPercentage(float voltage) {
+    if (voltage >= BATTERY_MAX_VOLTAGE) return 100;
+    if (voltage <= BATTERY_MIN_VOLTAGE) return 0;
+    return (voltage - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE) * 100;
+}
+
+void drawBatteryIndicator(DisplayType& display, int x, int y) {
+    float voltage = getBatteryVoltage();
+    display.setCursor(x, y);
+    display.setFont();
+
+    int percentage = getBatteryPercentage(voltage);
+    Serial.printf("Battery: %d%% (%.2fV)\n", percentage, voltage);
+
+    // Battery outline
+    display.drawRect(x, y, 19, 8, GxEPD_BLACK);
+    display.fillRect(x + 19, y + 2, 2, 4, GxEPD_BLACK);
+
+    // Add text for battery percentage and voltage
+    display.setCursor(x + 24, y);
+    display.setTextSize(1);
+    display.print(percentage);
+    display.print("% (");
+    display.print(voltage, 1);
+    display.print("V)");
+
+    // Calculate battery level
+    int level = map(percentage, 0, 100, 0, 18);
+    display.fillRect(x + 1, y + 1, level, 6, GxEPD_BLACK);
+
+    // Battery level indicator lines
+    for (int i = 1; i <= 3; i++) {
+        display.drawFastVLine(x + 5 * i, y + 1, 6, GxEPD_BLACK);
     }
 }
