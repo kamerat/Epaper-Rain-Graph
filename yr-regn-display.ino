@@ -74,7 +74,6 @@ void setup() {
     const char* randomWifiPassword = generatePassword();
 
     wifiManager.setAPCallback([&](WiFiManager* wifiManager) {
-        WiFi.mode(WIFI_STA); // We need to be enable wifi first in order to get saved WiFi info via WiFiManager
         if (wifiManager->getWiFiIsSaved()) {
             handleWiFiConnectionFailure();
         } else {
