@@ -30,7 +30,7 @@ Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This pro
      - QRcodeDisplay
      - Preferences
 
-5. Clone this repository or download the `yr-regn-display.ino` file
+5. Clone/download this repository and rename the folder `yr-regn-display`
 
 6. Create a `config.h` file in the same directory as `yr-regn-display.ino` based on the `example.config.h` file
 
