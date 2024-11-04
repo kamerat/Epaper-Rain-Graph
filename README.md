@@ -1,4 +1,4 @@
-# Lilygo-T5 Rain graph
+# Lilygo-T5 Rain Graph
 
 Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This project displays a precipitation forecast for the next 90 minutes using data from YR.no.
 
@@ -10,48 +10,40 @@ Weather precipitation graph using Lilygo T5 2.13" ESP32 E-paper screen. This pro
 
 ## Software Setup
 
-1. Install the Arduino IDE from [arduino.cc](https://www.arduino.cc/en/software)
+1. Install [VS Code](https://code.visualstudio.com/)
 
-2. Add ESP32 board support to Arduino IDE:
-   - Open Arduino IDE
-   - Go to File > Preferences
-   - Add the following URL to the "Additional Boards Manager URLs" field:
-     `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
-   - Go to Tools > Board > Boards Manager
-   - Search for "esp32" and install the "ESP32 by Espressif Systems" package
+2. Install [PlatformIO IDE](https://platformio.org/install/ide?install=vscode) extension for VS Code
 
-3. Install required libraries:
-   - Download libs from https://github.com/Xinyuan-LilyGO/LilyGo-T5-Epaper-Series/tree/master/lib and put them in `Documents\Arduino\libraries`
-   - Go to Sketch > Include Library > Manage Libraries
-   - Search for and install the following libraries:
-     - Time
-     - ArduinoJson
-     - WiFiManager
-     - QRcodeDisplay
-     - Preferences
+3. Clone this repository
 
-5. Clone this repository or download the `yr-regn-display.ino` file
+4. Create a `src/config.h` file based on the provided `src/example.config.h`
 
-6. Create a `config.h` file in the same directory as `yr-regn-display.ino` based on the `example.config.h` file
+5. Open the project in VS Code:
+   - File > Open Folder > Select the project folder
+   - PlatformIO will automatically install all required dependencies defined in `platformio.ini`
 
-7. Open the `yr-regn-display.ino` file in Arduino IDE
+6. Customize your configuration in `src/config.h`:
+   - Modify the `USER_AGENT` and add a link to your GitHub profile to properly authenticate with YR.no
+   - Set `SHOW_GRAPH_ON_NO_PRECIPITATION` to liking
+   - Set `SHOW_BATTERY_INDICATOR` to liking
 
-8. Customize your configuration:
-   - In the `config.h` file:
-     - Modify the `USER_AGENT` if desired
-     - Set `DEBUG` to `true` or `false` as needed
-     - set `SHOW_GRAPH_ON_NO_PRECIPITATION` to liking
-     - set `SHOW_BATTERY_INDICATOR` to liking
-
-9. Select the correct board and port:
-   - Go to Tools > Board and select "ESP32 Dev Module" or your specific Lilygo T5 board
-   - Go to Tools > Port and select the appropriate port for your device
-
-10. Upload the sketch to your Lilygo T5 device
+7. Build and Upload:
+   - Click the PlatformIO "Upload" button
+   - Select the appropriate port when prompted
 
 ## Usage
 
 Once uploaded, the device will prompt you to connect to Wi-Fi. Once connected, it will fetch precipitation data from YR.no, and display a graph showing the precipitation forecast for the next 90 minutes.
+
+## Development
+
+The project uses PlatformIO for dependency management and building. Key dependencies include:
+- QRcodeDisplay
+- Adafruit GFX Library
+- GxEPD2
+- WiFiManager
+- ArduinoJson
+- Time
 
 ## Contributing
 
