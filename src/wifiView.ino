@@ -13,6 +13,8 @@ void displayWiFiSetup(DisplayType& display, WiFiManager *wifiManager, const char
 
         display.setCursor(115, 15);
         display.print("WIFI Konfigurasjon");
+        display.setCursor(115, 25);
+        display.print(FW_VERSION);
         display.setCursor(115, 49);
         display.print("SSID: ");
         display.setCursor(115, 79);
