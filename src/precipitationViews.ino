@@ -20,8 +20,7 @@ void drawNoPrecipitationView(DisplayType& display, const String& timestamp) {
     display.print("dei neste 90 minutta");
 
     display.setFont();
-    display.setCursor(10, 70);
-    display.print("Oppdatert: ");
+    display.setCursor(150, 105);
     display.print(timestamp);
 }
 
@@ -61,7 +60,6 @@ void drawNoRadarView(DisplayType& display, const String& timestamp) {
     display.fillCircle(centerX + size / 6, centerY + size / 4, 1, GxEPD_BLACK);
 
     display.setFont();
-    display.setCursor(10, 70);
-    display.print("Oppdatert: ");
+    display.setCursor(150, 105);
     display.print(timestamp);
 }
