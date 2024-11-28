@@ -318,9 +318,4 @@ void drawBatteryIndicator(DisplayType& display, int x, int y) {
     // Calculate battery level
     int level = map(percentage, 0, 100, 0, 18);
     display.fillRect(x + 1, y + 1, level, 6, GxEPD_BLACK);
-
-    // Battery level indicator lines
-    for (int i = 1; i <= 3; i++) {
-        display.drawFastVLine(x + 5 * i, y + 1, 6, GxEPD_BLACK);
-    }
 }
