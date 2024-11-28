@@ -243,7 +243,7 @@ bool parsePrecipitationData(const String& payload) {
 
 const char* generatePassword() {
     static const char* passwords[] = {
-        "regnbukse", "paraply", "solskinn", "skybrudd",
+        "regnbukse", "paraplyer", "solskinn", "skybrudd",
         "duskregn", "plaskedam", "takrenne", "regnskyll",
         "regnbuer", "flomregn", "lynogtorden"
     };
