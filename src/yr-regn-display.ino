@@ -155,7 +155,11 @@ void updateDisplayWithNewData() {
         }
 
         if (SHOW_BATTERY_INDICATOR) {
-            drawBatteryIndicator(display, 110, 23);
+            if (SHOW_GRAPH_ON_NO_PRECIPITATION) {
+                drawBatteryIndicator(display, 110, 23);
+            } else {
+                drawBatteryIndicator(display, 10, 105);
+            }
         }
     } while (display.nextPage());
 }
