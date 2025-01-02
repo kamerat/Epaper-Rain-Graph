@@ -88,6 +88,10 @@ void setup() {
         }
     });
 
+
+    //set custom ip for portal
+    wifiManager.setAPStaticIPConfig(IPAddress(10,0,0,1), IPAddress(10,0,0,1), IPAddress(255,255,255,0));
+
     if (wifiManager.autoConnect("Regnvarsel", randomWifiPassword)) {
         Serial.println("WiFi connected");
         yrLocation = custom_yr_location.getValue();
