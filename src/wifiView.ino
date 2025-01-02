@@ -12,17 +12,20 @@ void displayWiFiSetup(DisplayType& display, WiFiManager *wifiManager, const char
         display.setTextColor(GxEPD_BLACK);
 
         display.setCursor(115, 15);
-        display.print("Koble til Wifi");
-        display.setCursor(115, 48);
-        display.print("Wifi navn: ");
+        display.print("Wifi navn:");
+        display.setCursor(115, 46);
+        display.print("Passord:");
+
         display.setCursor(115, 79);
-        display.print("Passord: ");
+        display.print("Nettside for oppsett:");
 
         display.setFont(&FreeSans9pt7b);
-        display.setCursor(115, 69);
+        display.setCursor(115, 36);
         display.print(wifiManager->getConfigPortalSSID());
-        display.setCursor(115, 101);
+        display.setCursor(115, 68);
         display.print(randomWifiPassword);
+        display.setCursor(115, 102);
+        display.print("http://10.0.0.1");
     } while (display.nextPage());
 }
 
