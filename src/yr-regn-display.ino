@@ -326,9 +326,7 @@ void drawBatteryIndicator(DisplayType& display, int x, int y) {
     display.setCursor(x + 24, y);
     display.setTextSize(1);
     display.print(percentage);
-    display.print("% (");
-    display.print(voltage, 1);
-    display.print("V)");
+    display.print("%");
 
     // Calculate battery level
     int level = map(percentage, 0, 100, 0, 18);
