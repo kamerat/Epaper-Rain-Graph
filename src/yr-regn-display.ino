@@ -17,7 +17,7 @@ const char* yrApiUrl = "https://www.yr.no/api/v0/locations/%s/forecast/now";
 const int BUTTON_PIN = 39; // LilyGo T5 integrated button pin
 const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
 const int CYCLES_BEFORE_RESTART = 288; // Restart every 24 hours (288 * 5 minutes)
-const char* FW_VERSION = "v1.3.3"; // Version number - Just for showing in the wifi setup screen
+const char* FW_VERSION = "v1.4.0"; // Version number - Just for showing in the wifi setup screen
 
 // Global variables
 String yrLocation; // String to store the YR location provided by the user
