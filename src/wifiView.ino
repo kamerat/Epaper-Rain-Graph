@@ -12,11 +12,9 @@ void displayWiFiSetup(DisplayType& display, WiFiManager *wifiManager, const char
         display.setTextColor(GxEPD_BLACK);
 
         display.setCursor(115, 15);
-        display.print("WIFI Konfigurasjon");
-        display.setCursor(115, 25);
-        display.print(FW_VERSION);
-        display.setCursor(115, 49);
-        display.print("SSID: ");
+        display.print("Koble til Wifi");
+        display.setCursor(115, 48);
+        display.print("Wifi navn: ");
         display.setCursor(115, 79);
         display.print("Passord: ");
 
@@ -53,6 +51,25 @@ void displayWiFiSetupFailed(DisplayType& display) {
         display.setCursor(10, 95);
         display.setFont();
         display.print("Restart enheten for a prove paa nytt");
+    } while (display.nextPage());
+}
+
+void displaySplashScreen(DisplayType& display) {
+    display.setFullWindow();
+    display.firstPage();
+    const float fakePrecipitationData[18] = {0.2, 0.5, 0.8, 1.0, 0.8, 0.6, 0.2, 0.2, 0.4, 0.4, 0.3, 0.4, 0.5, 1.0, 1.4, 1.3, 0.7, 0.4};
+    do {
+        display.fillScreen(GxEPD_WHITE);
+        display.setFont(&FreeSans9pt7b);
+        display.setCursor(30, 70);
+        display.setTextSize(2);
+        display.print("Regnvarsel");
+        display.setCursor(33, 80);
+        display.setFont();
+        display.setTextSize(1);
+        display.print(String(FW_VERSION));
+
+        drawGraphData(display, 0, 25, display.width(), 100, fakePrecipitationData, 18);
     } while (display.nextPage());
 }
 

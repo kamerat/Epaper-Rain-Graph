@@ -17,7 +17,7 @@ const char* yrApiUrl = "https://www.yr.no/api/v0/locations/%s/forecast/now";
 const int BUTTON_PIN = 39; // LilyGo T5 integrated button pin
 const int UPDATE_INTERVAL = 5 * 60 * 1000000;  // 5 minutes in microseconds
 const int CYCLES_BEFORE_RESTART = 288; // Restart every 24 hours (288 * 5 minutes)
-const char* FW_VERSION = "v1.3.2"; // Version number - Just for showing in the wifi setup screen
+const char* FW_VERSION = "v1.3.3"; // Version number - Just for showing in the wifi setup screen
 
 // Global variables
 String yrLocation; // String to store the YR location provided by the user
@@ -43,6 +43,12 @@ void setup() {
     display.setRotation(3);
     display.setFont(&FreeSans9pt7b);
     display.setTextColor(GxEPD_BLACK);
+
+    // Only show splash screen on power-on reset
+    if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED) {
+        displaySplashScreen(display);
+        delay(1000);
+    }
 
     pinMode(BUTTON_PIN, INPUT_PULLUP);
 
@@ -279,8 +285,8 @@ void handleWiFiConnectionFailure() {
         displayWiFiLostMessage(display, UPDATE_INTERVAL / 1000000 / 60);
         esp_sleep_enable_timer_wakeup(UPDATE_INTERVAL);
     } else {
-        // No WiFi configured, fallback to original behavior
-        displayWiFiSetupFailed(display);
+        // No WiFi configured, fallback to splash screen
+        displaySplashScreen(display);
     }
 
     WiFi.disconnect(true);
